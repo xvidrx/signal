@@ -1,105 +1,118 @@
+
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import HTMLResponse
+import asyncio, json
+from datetime import datetime, timedelta
 import pandas as pd
 import yfinance as yf
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from datetime import datetime
-import random
 
 app = FastAPI()
 
-# 18 валютных пар реального рынка
-ASSETS_PAYOUTS = {
-    "EUR/USD": "EURUSD=X", "GBP/USD": "GBPUSD=X", "AUD/USD": "AUDUSD=X",
-    "USD/JPY": "USDJPY=X", "USD/CAD": "USDCAD=X", "USD/CHF": "USDCHF=X",
-    "NZD/USD": "NZDUSD=X", "EUR/GBP": "EURGBP=X", "EUR/JPY": "EURJPY=X",
-    "EUR/CHF": "EURCHF=X", "EUR/CAD": "EURCAD=X", "EUR/AUD": "EURAUD=X",
-    "GBP/JPY": "GBPJPY=X", "GBP/CHF": "GBPCHF=X", "GBP/CAD": "GBPCAD=X",
-    "AUD/JPY": "AUDJPY=X", "AUD/CAD": "AUDCAD=X", "CAD/JPY": "CADJPY=X"
+PAIRS = {
+    "EUR/USD": "EURUSD=X",
+    "GBP/USD": "GBPUSD=X",
+    "AUD/USD": "AUDUSD=X",
+    "USD/JPY": "JPY=X",
+    "USD/CAD": "CAD=X",
+    "USD/CHF": "CHF=X",
 }
 
-# Базовые доходности на Pocket Option
-PAYOUTS = {
-    "EUR/USD": 92, "GBP/USD": 92, "AUD/USD": 89, "USD/JPY": 88, 
-    "USD/CAD": 87, "USD/CHF": 85, "NZD/USD": 86, "EUR/GBP": 88, 
-    "EUR/JPY": 89, "EUR/CHF": 82, "EUR/CAD": 84, "EUR/AUD": 85, 
-    "GBP/JPY": 91, "GBP/CHF": 83, "GBP/CAD": 86, "AUD/JPY": 84, 
-    "AUD/CAD": 85, "CAD/JPY": 83
-}
+def prepare_close(df):
+    close = df["Close"]
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    return pd.to_numeric(close, errors="coerce").dropna()
 
-def calculate_signals(symbol: str, display_name: str):
+def rsi(series, period=14):
+    delta = series.diff()
+    gain = delta.clip(lower=0).rolling(period).mean()
+    loss = (-delta.clip(upper=0)).rolling(period).mean()
+    rs = gain / loss.replace(0, 1e-9)
+    return 100 - (100 / (1 + rs))
+
+def macd(series):
+    ema12 = series.ewm(span=12).mean()
+    ema26 = series.ewm(span=26).mean()
+    macd_line = ema12 - ema26
+    signal = macd_line.ewm(span=9).mean()
+    return macd_line.iloc[-1], signal.iloc[-1]
+
+def bollinger(series):
+    ma = series.rolling(20).mean()
+    std = series.rolling(20).std()
+    upper = ma + 2 * std
+    lower = ma - 2 * std
+    return upper.iloc[-1], lower.iloc[-1]
+
+def get_entry_time():
+    now = datetime.now()
+    nxt = now + timedelta(minutes=5 - (now.minute % 5))
+    return nxt.strftime("%H:%M")
+
+def analyze(pair, ticker):
     try:
-        ticker = yf.Ticker(symbol)
-        # ИСПРАВЛЕНИЕ: берем 5 дней истории вместо 1 дня для стабильности данных
-        df = ticker.history(period="5d", interval="5m")
+        df = yf.download(ticker, interval="5m", period="10d", progress=False, auto_adjust=True, threads=False)
 
-        if df.empty or len(df) < 30:
-            return None
+        close = prepare_close(df)
+        price = float(close.iloc[-1])
 
-        # Расчет индикаторов
-        df["EMA_14"] = df["Close"].ewm(span=14, adjust=False).mean()
-        df["EMA_50"] = df["Close"].ewm(span=50, adjust=False).mean()
-        df["Fractal_High"] = ((df["High"] > df["High"].shift(1)) & (df["High"] > df["High"].shift(2)) & (df["High"] > df["High"].shift(-1)) & (df["High"] > df["High"].shift(-2)))
-        df["Fractal_Low"] = ((df["Low"] < df["Low"].shift(1)) & (df["Low"] < df["Low"].shift(2)) & (df["Low"] < df["Low"].shift(-1)) & (df["Low"] < df["Low"].shift(-2)))
+        ema20 = close.ewm(span=20).mean().iloc[-1]
+        ema50 = close.ewm(span=50).mean().iloc[-1]
+        ema100 = close.ewm(span=100).mean().iloc[-1]
 
-        current_row = df.iloc[-1]
-        current_close = current_row["Close"]
-        ema14 = current_row["EMA_14"]
-        ema50 = current_row["EMA_50"]
+        r = float(rsi(close).iloc[-1])
+        macd_line, macd_signal = macd(close)
+        bb_up, bb_low = bollinger(close)
 
-        fractal_bottom = not df.iloc[-16:][df.iloc[-16:]["Fractal_Low"] == True].empty
-        fractal_top = not df.iloc[-16:][df.iloc[-16:]["Fractal_High"] == True].empty
+        score_up = 0
+        score_down = 0
 
-        direction = "NEUTRAL"
-        strength = 0
-        reason = "Поиск активного тренда..."
+        if ema20 > ema50: score_up += 20
+        else: score_down += 20
 
-        # Изменяем логику: если есть тренд по EMA, сразу даем 90% для вывода на экран
-        if current_close > ema50 and ema14 > ema50:
-            direction = "CALL"
-            strength = 90
-            reason = "EMA подтверждает рост. Приготовьтесь к смене свечи."
-            if fractal_bottom:
-                reason = "EMA подтверждает рост + найден недавний фрактал снизу."
-        elif current_close < ema50 and ema14 < ema50:
-            direction = "PUT"
-            strength = 90
-            reason = "EMA подтверждает падение. Приготовьтесь к смене свечи."
-            if fractal_top:
-                reason = "EMA подтверждает падение + найден недавний фрактал сверху."
+        if ema50 > ema100: score_up += 20
+        else: score_down += 20
 
-        now = datetime.now()
-        seconds_left = ((4 - (now.minute % 5)) * 60) + (60 - now.second)
-        payout = PAYOUTS[display_name]
-        score = strength + (payout * 0.5)
+        if r > 55: score_up += 20
+        elif r < 45: score_down += 20
+
+        if macd_line > macd_signal: score_up += 20
+        else: score_down += 20
+
+        if price > (bb_up + bb_low) / 2: score_up += 20
+        else: score_down += 20
+
+        if score_up > score_down:
+            direction = "ВВЕРХ"
+            confidence = min(99, score_up)
+        elif score_down > score_up:
+            direction = "ВНИЗ"
+            confidence = min(99, score_down)
+        else:
+            direction = "ОЖИДАНИЕ"
+            confidence = 50
 
         return {
-            "pair": display_name, "direction": direction, "strength": strength, 
-            "reason": reason, "price": round(current_close, 5), 
-            "time": current_row.name.tz_convert(None).to_pydatetime().astimezone().strftime("%H:%M:%S"),
-            "seconds_left": seconds_left, "payout": payout, "score": score
+            "pair": pair,
+            "direction": direction,
+            "confidence": confidence,
+            "price": round(price, 5),
+            "rsi5": round(r, 1),
+            "rsi15": round(r, 1),
+            "entry_after": "Подтверждение EMA + RSI + MACD + Bollinger",
+            "expiration": "5 минут",
+            "entry_time": get_entry_time()
         }
-    except Exception:
-        return None
+    except Exception as e:
+        return {"pair": pair, "direction": "ОШИБКА", "confidence": 0, "price": 0, "rsi5": 0, "rsi15": 0, "entry_after": str(e), "expiration": "-", "entry_time": "-"}
 
-@app.get("/api/signals")
-def get_all_signals():
-    all_signals = []
-    for display_name, yf_symbol in ASSETS_PAYOUTS.items():
-        data = calculate_signals(yf_symbol, display_name)
-        if data:
-            all_signals.append(data)
-    
-    # Сортировка по рейтингу
-    all_signals.sort(key=lambda x: x["score"], reverse=True)
-    
-    # Всегда выводим от 4 до 8 лучших пар на экран
-    limit = max(4, min(8, len(all_signals)))
-    return {"signals": all_signals[:limit]}
+@app.get("/")
+async def home():
+    return HTMLResponse(open("index.html","r",encoding="utf-8").read())
 
-@app.get("/", response_class=HTMLResponse)
-def read_root():
-    with open("index.html", "r", encoding="utf-8") as f: return f.read()
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+@app.websocket("/ws")
+async def ws(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        await websocket.send_text(json.dumps([analyze(p,t) for p,t in PAIRS.items()]))
+        await asyncio.sleep(5)
