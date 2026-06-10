@@ -56,7 +56,11 @@ box-shadow:0 0 20px rgba(0,50,255,.12);
 </div>
 
 <script>
-const ws = new WebSocket("ws://" + location.host + "/ws");
+const protocol =
+location.protocol === "https:" ? "wss:" : "ws:";
+
+const ws =
+new WebSocket(protocol + "//" + location.host + "/ws");
 
 ws.onmessage=(event)=>{
 document.getElementById("clock").innerText="Обновлено: "+new Date().toLocaleTimeString();
