@@ -1,97 +1,341 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡Cyber Scanner M5 Smart</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-body{
-background:
-radial-gradient(circle at 15% 40%,rgba(42,76,210,.25),transparent 35%),
-radial-gradient(circle at 85% 90%,rgba(115,0,255,.22),transparent 35%),
-#030919;
-}
-.panel{
-background:rgba(4,12,34,.86);
-backdrop-filter:blur(8px);
-border:1px solid rgba(80,120,255,.18);
-box-shadow:0 0 40px rgba(20,70,255,.12);
-}
-.gridbg{
-background-image:
-linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
-linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
-background-size:28px 28px;
-}
-.card{
-background:#040b22;
-border:1px solid rgba(72,104,255,.35);
-box-shadow:0 0 20px rgba(0,50,255,.12);
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ AI SCANNER — СИГНАЛЫ</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .glass-panel{
+            background:rgba(15,23,42,.72);
+            backdrop-filter:blur(20px);
+            -webkit-backdrop-filter:blur(20px);
+            border:1px solid rgba(255,255,255,.05);
+
+            box-shadow:
+            0 0 30px rgba(0,0,0,.35),
+            inset 0 0 20px rgba(255,255,255,.02);
+        }
+    </style>
 </head>
-<body class="text-white min-h-screen">
 
-<header class="px-8 py-6 border-b border-white/5 flex justify-between items-center">
-<div>
-<div class="flex items-center gap-4">
-<div class="w-3 h-3 rounded-full bg-emerald-400"></div>
-<h1 class="font-black tracking-widest text-3xl">CYBER SCANNER</h1>
-<span class="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">M5 SMART</span>
-</div>
-<p class="text-slate-500 text-sm mt-2">Фильтр топ-активов</p>
-</div>
-<div class="rounded-2xl border border-emerald-500/20 px-5 py-3 text-emerald-400 font-bold">ТАЙМФРЕЙМ: M5</div>
-</header>
+<body class="bg-[radial-gradient(circle_at_top_left,_#172554,_transparent_25%),radial-gradient(circle_at_bottom_right,_#3b0764,_transparent_25%),linear-gradient(to_bottom_right,_#020617,_#0f172a,_#111827)] text-slate-100 font-sans min-h-screen flex flex-col justify-between antialiased overflow-x-hidden">
 
-<div class="max-w-6xl mx-auto px-4 py-10">
-<div class="panel gridbg rounded-[38px] p-8">
-<div class="flex justify-between items-center mb-8">
-<h2 class="font-bold text-3xl">ВХОД СТРОГО ПО ФЕНШУЮ⌛️</h2>
-<div id="clock" class="text-cyan-400 font-bold"></div>
-</div>
-<div id="grid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
-</div>
-</div>
+    <header class="border-b border-slate-800/40 bg-slate-950/60 backdrop-blur-2xl px-8 py-5 flex justify-between items-center sticky top-0 z-50 shadow-2xl">
 
-<script>
-const protocol =
+        <div class="flex items-center gap-4">
+
+            <div class="relative">
+                <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                <div class="absolute inset-0 w-3 h-3 bg-emerald-500 rounded-full animate-ping opacity-40"></div>
+            </div>
+
+            <div>
+                <h1 class="text-xl font-black tracking-wider text-white font-mono">
+                    AI SCANNER
+
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md ml-2">
+                        M5 SMART
+                    </span>
+                </h1>
+
+                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-widest mt-0.5">
+                    Направление, время и экспирация
+                </p>
+            </div>
+
+        </div>
+
+        <div class="bg-slate-950/80 px-4 py-2 rounded-2xl border border-slate-800/80 shadow-lg">
+            <span class="text-xs font-bold text-emerald-400 font-mono uppercase tracking-wider">
+                ТАЙМФРЕЙМ: M5
+            </span>
+        </div>
+
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto p-6 md:p-8 flex-grow flex flex-col justify-center">
+
+        <div class="glass-panel rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden">
+
+            <div class="absolute inset-0 opacity-[0.03]"
+                 style="background-image:linear-gradient(to right,#fff 1px,transparent 1px),linear-gradient(to bottom,#fff 1px,transparent 1px);background-size:40px 40px;">
+            </div>
+
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-800/40 relative z-10">
+
+                <h2 class="text-lg font-bold text-slate-200 tracking-tight">
+                    Фильтр топ-активов: Сигнал + Срок экспирации
+                </h2>
+
+                <span id="updateTime"
+                      class="text-xs font-mono font-bold text-cyan-400/80 bg-cyan-950/30 px-4 py-2 rounded-2xl border border-cyan-500/10 shadow-lg">
+                    Загрузка...
+                </span>
+
+            </div>
+
+            <div id="signalsGrid"
+                 class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 relative z-10">
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="text-center py-4 text-[11px] text-slate-500 border-t border-slate-900/60 bg-slate-950/20">
+        Входите строго по таймеру "ЧЕРЕЗ".
+    </footer>
+
+    <audio id="soundAlert" src="https://mixkit.co" preload="auto"></audio>
+    <audio id="soundAction" src="https://mixkit.co" preload="auto"></audio>
+
+    <script>
+	const protocol =
 location.protocol === "https:" ? "wss:" : "ws:";
 
 const ws =
 new WebSocket(protocol + "//" + location.host + "/ws");
 
-ws.onmessage=(event)=>{
-document.getElementById("clock").innerText="Обновлено: "+new Date().toLocaleTimeString();
-const data=JSON.parse(event.data);
-const grid=document.getElementById("grid");
-grid.innerHTML="";
+        let localSignals = [];
 
-data.forEach(signal=>{
-const up = signal.direction==="ВВЕРХ";
+        async function fetchSignals() {
 
-grid.innerHTML += `
-<div class="card rounded-[28px] p-6">
-<div class="flex justify-between items-start mb-4">
-<div>
-<div class="text-4xl font-black">${signal.pair}</div>
-<div class="text-emerald-400 text-sm mt-2">Доходность: ${signal.confidence}%</div>
-</div>
-<div class="px-3 py-1 rounded-lg border ${up?'text-emerald-400 border-emerald-500/30':'text-rose-400 border-rose-500/30'}">📡 СИГНАЛ</div>
-</div>
+            try {
 
-<div class="bg-black/25 rounded-2xl p-4 space-y-3">
-<div class="flex justify-between"><span class="text-slate-500">КУДА:</span><span class="${up?'text-emerald-400':'text-rose-400'} font-bold">${signal.direction}</span></div>
-<div class="flex justify-between"><span class="text-slate-500">ВРЕМЯ ВХОДА:</span><span class="text-indigo-300 font-bold">${signal.entry_time}</span></div>
-<div class="flex justify-between"><span class="text-slate-500">НА СКОЛЬКО:</span><span class="font-bold">${signal.expiration}</span></div>
-</div>
+                const response = await fetch('/api/signals');
+                const data = await response.json();
 
-<div class="mt-5 text-xs text-slate-500">${signal.entry_after}</div>
-<div class="mt-2 text-right text-xs text-slate-400">Цена: ${signal.price}</div>
-</div>`;
-});
-};
-</script>
+                localSignals = data.signals;
+
+                renderGrid();
+
+            } catch (error) {
+
+                console.error("Ошибка сети", error);
+
+            }
+
+        }
+
+        function renderGrid() {
+
+            const grid = document.getElementById('signalsGrid');
+
+            grid.innerHTML = '';
+
+            localSignals
+            .slice(0, 6)
+            .forEach(function(sig) {
+
+                let cardBg = "bg-slate-950/50 border-slate-800/60 opacity-50";
+                let badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-slate-600 border border-slate-800">ПОИСК</span>';
+
+                let textDirection = sig.direction === 'CALL'
+                    ? 'ВВЕРХ 🟢'
+                    : 'ВНИЗ 🔴';
+
+                let instrDirection =
+                    '<span class="text-slate-400 font-bold">' +
+                    textDirection +
+                    '</span>';
+
+                let instrWhen =
+                    '<span class="text-slate-400 font-mono">Анализ...</span>';
+
+                let instrDuration =
+                    '<span class="text-slate-400 font-bold">10-15 мин</span>';
+
+                if (sig.strength >= 90) {
+
+                    if (sig.seconds_left <= 0 || sig.seconds_left >= 296) {
+
+                        cardBg = sig.direction === 'CALL'
+                            ? "bg-gradient-to-b from-emerald-950/50 to-slate-950/90 border-emerald-500 shadow-2xl opacity-100 ring-2 ring-emerald-500/30"
+                            : "bg-gradient-to-b from-rose-950/50 to-slate-950/90 border-rose-500 shadow-2xl opacity-100 ring-2 ring-rose-500/30";
+
+                        badge = sig.direction === 'CALL'
+                            ? '<span class="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500 text-slate-950 animate-pulse">🔥 ВХОД!</span>'
+                            : '<span class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500 text-slate-950 animate-pulse">🔥 ВХОД!</span>';
+
+                        instrDirection = sig.direction === 'CALL'
+                            ? '<span class="text-emerald-400 font-black animate-bounce text-sm">ВВЕРХ ⬆️</span>'
+                            : '<span class="text-rose-400 font-black animate-bounce text-sm">ВНИЗ ⬇️</span>';
+
+                        instrWhen =
+                            '<span class="text-white font-black uppercase text-xs bg-red-600 px-2 py-0.5 rounded animate-pulse">ОТКРЫВАЙ СДЕЛКУ!</span>';
+
+                        instrDuration =
+                            '<span class="text-white font-black text-sm bg-slate-800 px-2 py-0.5 rounded">НА 10 МИНУТ</span>';
+
+                    } else {
+
+                        cardBg =
+                            "bg-slate-950/80 border-indigo-500/40 opacity-100 shadow-lg";
+
+                        badge = sig.direction === 'CALL'
+                            ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">🔮 СИГНАЛ</span>'
+                            : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">🔮 СИГНАЛ</span>';
+
+                        instrDirection = sig.direction === 'CALL'
+                            ? '<span class="text-emerald-400 font-bold">ВВЕРХ ⬆️</span>'
+                            : '<span class="text-rose-400 font-bold">ВНИЗ ⬇️</span>';
+
+                        instrWhen =
+                            '<span class="text-indigo-400 font-black font-mono">ЧЕРЕЗ ' +
+                            formatTime(sig.seconds_left) +
+                            '</span>';
+
+                        if (sig.seconds_left <= 15) {
+
+                            cardBg =
+                                "bg-gradient-to-b from-amber-950/20 to-slate-950/90 border-amber-500/60 opacity-100 shadow-2xl";
+
+                            instrWhen =
+                                '<span class="text-amber-400 font-black font-mono animate-pulse">ЧЕРЕЗ ' +
+                                sig.seconds_left +
+                                ' сек!</span>';
+                        }
+
+                        instrDuration =
+                            '<span class="text-slate-300 font-medium">НА 10 МИНУТ</span>';
+                    }
+                }
+
+                let html =
+                    '<div class="border rounded-[28px] p-5 flex flex-col justify-between min-h-[210px] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] shadow-2xl backdrop-blur-xl overflow-hidden relative ' +
+                    cardBg +
+                    '">';
+
+                html +=
+                    '<div class="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none"></div>';
+
+                html +=
+                    '<div class="relative z-10 flex justify-between items-start">';
+
+                html +=
+                    '<div><h3 class="text-lg font-black text-white font-mono tracking-wide">' +
+                    sig.pair +
+                    '</h3>';
+
+                html +=
+                    '<p class="text-[10px] text-slate-500 mt-1">Доходность: <span class="text-emerald-400 font-bold">' +
+                    sig.payout +
+                    '%</span></p></div>' +
+                    badge +
+                    '</div>';
+
+                html +=
+                    '<div class="bg-black/20 backdrop-blur-xl border border-white/5 rounded-2xl p-4 my-3 text-xs flex flex-col gap-2 shadow-inner relative z-10">';
+
+                html +=
+                    '<div class="flex justify-between"><span class="text-slate-500 font-medium">КУДА:</span>' +
+                    instrDirection +
+                    '</div>';
+
+                html +=
+                    '<div class="flex justify-between"><span class="text-slate-500 font-medium">ВХОДИМ:</span>' +
+                    instrWhen +
+                    '</div>';
+
+                html +=
+                    '<div class="flex justify-between"><span class="text-slate-500 font-medium">НА СКОЛЬКО:</span>' +
+                    instrDuration +
+                    '</div>';
+
+                html +=
+                    '</div>';
+
+                html +=
+                    '<div class="relative z-10 flex justify-between items-center border-t border-slate-800/30 pt-3 mt-auto">';
+
+                html +=
+                    '<span class="text-[9px] text-slate-500 font-mono leading-none max-w-[70%]">' +
+                    sig.reason +
+                    '</span>';
+
+                html +=
+                    '<span class="text-[9px] text-slate-400 font-mono font-bold">Цена: ' +
+                    sig.price +
+                    '</span>';
+
+                html +=
+                    '</div></div>';
+
+                grid.innerHTML += html;
+
+            });
+
+            document.getElementById('updateTime').innerText =
+                "Обновлено: " +
+                new Date().toLocaleTimeString();
+
+        }
+
+        function formatTime(ts) {
+
+            if (ts <= 0) return "00:00";
+
+            const m = Math.floor(ts / 60);
+            const s = ts % 60;
+
+            return m.toString().padStart(2, '0')
+                + ":"
+                + s.toString().padStart(2, '0');
+
+        }
+
+        setInterval(function() {
+
+            let pA = false;
+            let pB = false;
+
+            localSignals.forEach(function(sig) {
+
+                if (sig.seconds_left > -5)
+                    sig.seconds_left--;
+
+                if (sig.strength >= 90) {
+
+                    if (sig.seconds_left === 15)
+                        pA = true;
+
+                    if (sig.seconds_left === 0)
+                        pB = true;
+
+                }
+
+            });
+
+            if (pA)
+                document.getElementById('soundAlert')
+                .play()
+                .catch(function(e) {});
+
+            if (pB)
+                document.getElementById('soundAction')
+                .play()
+                .catch(function(e) {});
+
+            renderGrid();
+
+        }, 1000);
+
+        setInterval(fetchSignals, 10000);
+
+        window.onload = function() {
+
+            fetchSignals();
+
+            document.body.onclick = function() {};
+
+        };
+
+    </script>
+
 </body>
 </html>
+
